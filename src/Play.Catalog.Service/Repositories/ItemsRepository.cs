@@ -10,7 +10,7 @@ namespace Play.Catalog.Service.Repositorie
         //MongoDB item collection
         private readonly IMongoCollection<Item> dbCollection;
         //Filter builder to query
-        private readonly FilterDefinitionBuilder<Item> filterBuilder = Builders<Item>.Filter
+        private readonly FilterDefinitionBuilder<Item> filterBuilder = Builders<Item>.Filter;
         //Constructor
         public ItemsRepository()
         {

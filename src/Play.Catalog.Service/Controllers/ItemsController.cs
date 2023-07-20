@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Play.Catalog.Service.Dtos;
+using Play.Catalog.Service.Entities;
+using Play.Catalog.Service.Repositorie;
 
 namespace Play.Catalog.Service.Controllers
 {
@@ -7,23 +9,19 @@ namespace Play.Catalog.Service.Controllers
     [Route("items")]
     public class ItemsController : ControllerBase
     {
-        private static readonly List<ItemDto> items = new()
-        {
-            new ItemDto(Guid.NewGuid(), "Potion", "Restores a small amount of HP", 5, DateTime.UtcNow),
-            new ItemDto(Guid.NewGuid(), "Antidote", "Cures potion", 5, DateTime.UtcNow),
-            new ItemDto(Guid.NewGuid(), "Bronze Sword", "Deals a small amount of damage", 5, DateTime.UtcNow),
-        };
+        private readonly ItemsRepository itemsRepository = new();
 
         [HttpGet]
-        public IEnumerable<ItemDto> Get()
+        public async Task<IEnumerable<ItemDto>> GetAsync()
         {
+            var items = (await itemsRepository.GetAllAsync()).Select(item => item.AsDTO());
             return items;
         }
 
         [HttpGet("{Id}")]
-        public ActionResult<ItemDto> GetById(Guid Id)
+        public async Task<ActionResult<ItemDto>> GetByIdAsync(Guid Id)
         {
-            var item = items.Where(item => item.Id == Id).SingleOrDefault();
+            var item = (await itemsRepository.GetAsync(Id)).AsDTO();
 
             if (item == null)
             {
@@ -34,50 +32,54 @@ namespace Play.Catalog.Service.Controllers
 
         [HttpPost]
         //ActionResult is used when you want to notify that an action was executed
-        public ActionResult<ItemDto> Post(CreateItemDto itemDto)
+        public async Task<ActionResult<ItemDto>> PostAsync(CreateItemDto itemDto)
         {
-            var item = new ItemDto(Guid.NewGuid(), itemDto.Name, itemDto.Description, itemDto.Price, DateTime.UtcNow);
-            items.Add(item);
+            var item = new Item
+            {
+                Name = itemDto.Name,
+                Description = itemDto.Description,
+                Price = itemDto.Price,
+                CreatedDate = DateTime.UtcNow
+            };
+
+            await itemsRepository.CreateAsync(item);
+
             //Will say, the item has been created and you can find it at the location
-            return CreatedAtAction(nameof(GetById), new { Id = item.Id }, item);
+            return CreatedAtAction(nameof(GetByIdAsync), new { Id = item.Id }, item);
         }
 
         [HttpPut("{Id}")]
         //Iaction is used when we want to perform an action but we don't need to return anything
-        public IActionResult Put(Guid Id, UpdateItemDto updateItemDto)
+        public async Task<IActionResult> PutAsync(Guid Id, UpdateItemDto updateItemDto)
         {
-            var existingItem = items.Where(item => item.Id == Id).SingleOrDefault();
+            var existingEntity = await itemsRepository.GetAsync(Id);
 
-            if (existingItem == null)
+            if (existingEntity == null)
             {
                 return NotFound();
             }
 
-            //Creates a clone of the existingItem using the new attributes
-            var updatedItem = existingItem with
-            {
-                Name = updateItemDto.Name,
-                Description = updateItemDto.Description,
-                Price = updateItemDto.Price
-            };
+            existingEntity.Name = updateItemDto.Name;
+            existingEntity.Description = updateItemDto.Description;
+            existingEntity.Price = updateItemDto.Price;
 
-            var index = items.FindIndex(existingItem => existingItem.Id == Id);
-            items[index] = updatedItem;
+            await itemsRepository.UpdateAsync(existingEntity);
 
             return NoContent();
         }
 
         [HttpDelete("{Id}")]
-        public IActionResult Delete(Guid Id)
+        public async Task<IActionResult> DeleteAsync(Guid Id)
         {
-            var index = items.FindIndex(existingItem => existingItem.Id == Id);
+            var item = await itemsRepository.GetAsync(Id);
 
-            if (index < 0)
+            if (item == null)
             {
                 return NotFound();
             }
 
-            items.RemoveAt(index);
+            await itemsRepository.RemoveAsync(item.Id);
+
             return NoContent();
         }
     }
