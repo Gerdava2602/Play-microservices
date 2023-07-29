@@ -1,9 +1,10 @@
 using MongoDB.Driver;
 using Play.Catalog.Service.Entities;
 
-namespace Play.Catalog.Service.Repositorie
+namespace Play.Catalog.Service.Repositories
 {
-    public class ItemsRepository
+
+    public class ItemsRepository : IItemsRepository
     {
         //Collection name
         private const string collectionName = "items";
@@ -12,11 +13,8 @@ namespace Play.Catalog.Service.Repositorie
         //Filter builder to query
         private readonly FilterDefinitionBuilder<Item> filterBuilder = Builders<Item>.Filter;
         //Constructor
-        public ItemsRepository()
+        public ItemsRepository(IMongoDatabase database)
         {
-            var mongoClient = new MongoClient("mongodb://localhost:27017");
-            // gets the database
-            var database = mongoClient.GetDatabase("Catalog");
             dbCollection = database.GetCollection<Item>(collectionName);
         }
 
