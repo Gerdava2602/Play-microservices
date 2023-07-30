@@ -3,12 +3,13 @@ using Play.Catalog.Service.Entities;
 namespace Play.Catalog.Service.Repositories
 {
     //Refers to the structure of the repository
-    public interface IItemsRepository
+    //We constraint the type to be an entity
+    public interface IRepository<T> where T : IEntity
     {
-        Task CreateAsync(Item entity);
-        Task<IReadOnlyCollection<Item>> GetAllAsync();
-        Task<Item> GetAsync(Guid Id);
+        Task CreateAsync(T entity);
+        Task<IReadOnlyCollection<T>> GetAllAsync();
+        Task<T> GetAsync(Guid Id);
         Task RemoveAsync(Guid Id);
-        Task UpdateAsync(Item entity);
+        Task UpdateAsync(T entity);
     }
 }
